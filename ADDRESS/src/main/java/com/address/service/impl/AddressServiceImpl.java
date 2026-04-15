@@ -1,0 +1,103 @@
+package com.address.service.impl;
+
+import com.address.exception.ResourceNotFoundException;
+import com.address.model.dto.AddressDto;
+import com.address.model.dto.AddressRequest;
+import com.address.model.dto.AddressRequestDto;
+import com.address.model.entity.Address;
+import com.address.repository.AddressRepository;
+import com.address.service.AddressService;
+import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+import static org.springframework.data.jpa.domain.AbstractPersistable_.id;
+
+@Service
+public class AddressServiceImpl implements AddressService {
+    Logger log = LoggerFactory.getLogger(AddressServiceImpl.class);
+    private final AddressRepository addressRepository;
+    private final ModelMapper modelMapper;
+
+    public AddressServiceImpl(AddressRepository addressRepository, ModelMapper modelMapper) {
+        this.addressRepository = addressRepository;
+        this.modelMapper = modelMapper;
+    }
+
+    @Override
+    public List<AddressDto> saveAddress(AddressRequest addressRequest) {
+        //TODO: check if user exists
+        List<Address> listToSave = this.saveOrUpdateAddressRequest(addressRequest);
+        List<Address> savedAddress = addressRepository.saveAll(listToSave);
+        return savedAddress.stream().map(address -> modelMapper.map(address, AddressDto.class)).toList();
+
+    }
+
+    @Override
+    public List<AddressDto> updateAddress(AddressRequest addressRequest) {
+        //TODO: check if user exists
+
+        List<Address> addressByUserId =addressRepository.findAllByUserId(addressRequest.getUserId());
+        if(addressByUserId.isEmpty()){
+            log.info("No address found for user id {}", addressRequest.getUserId());
+            log.info("Creating new address for user id {}", addressRequest.getUserId());
+        }
+        List<Address> listToUpdate = this.saveOrUpdateAddressRequest(addressRequest);
+
+        List<Long> upcomingNonNullIds = listToUpdate.stream().map(Address::getId).filter(Objects::nonNull).toList();
+        List<Long> existingIds = addressByUserId.stream().map(Address::getId).toList();
+
+        List<Long> idsToDelete = existingIds.stream().filter(id -> !upcomingNonNullIds.contains(id)).toList();
+        if(!idsToDelete.isEmpty()){
+            addressRepository.deleteAllById(idsToDelete);
+        }
+        List<Address> updatedAddress = addressRepository.saveAll(listToUpdate);
+        return updatedAddress.stream().map(address -> modelMapper.map(address, AddressDto.class)).toList();
+    }
+
+    @Override
+    public AddressDto getSingleAddress(Long id) {
+        Address address = addressRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Address not found with id:" + id, HttpStatus.NOT_FOUND));
+        return modelMapper.map(address, AddressDto.class);
+    }
+
+    @Override
+    public List<AddressDto> getAllAddresses() {
+        List<Address> all = addressRepository.findAll();
+        if(all.isEmpty()){
+            throw new ResourceNotFoundException("No address found", HttpStatus.NOT_FOUND);
+        }
+        return all.stream().map(address -> modelMapper.map(address, AddressDto.class)).toList();
+    }
+
+    @Override
+    public void deleteAddress(Long id) {
+        Address address = addressRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Address not found with id:" + id, HttpStatus.NOT_FOUND));
+        addressRepository.delete(address);
+
+    }
+
+    private List<Address> saveOrUpdateAddressRequest(AddressRequest addressRequest) {
+        List<Address> listToSave = new ArrayList<>();
+        for (AddressRequestDto addressRequestDto : addressRequest.getAddressRequestDtoList()) {
+            Address address = new Address();
+            address.setId(addressRequestDto.getId() != null ? addressRequestDto.getId() : null);
+            address.setStreet(addressRequestDto.getStreet());
+            address.setCity(addressRequestDto.getCity());
+            address.setCountry(addressRequestDto.getCountry());
+            address.setPinCode(addressRequestDto.getPinCode());
+            address.setAddressType(addressRequestDto.getAddressType());
+            address.setUserId(addressRequest.getUserId());
+            listToSave.add(address);
+
+        }
+        return listToSave;
+    }
+}
+
