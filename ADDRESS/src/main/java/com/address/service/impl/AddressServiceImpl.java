@@ -1,9 +1,11 @@
 package com.address.service.impl;
 
+import com.address.client.UserClient;
 import com.address.exception.ResourceNotFoundException;
 import com.address.model.dto.AddressDto;
 import com.address.model.dto.AddressRequest;
 import com.address.model.dto.AddressRequestDto;
+import com.address.model.dto.UserDto;
 import com.address.model.entity.Address;
 import com.address.repository.AddressRepository;
 import com.address.service.AddressService;
@@ -24,15 +26,17 @@ public class AddressServiceImpl implements AddressService {
     Logger log = LoggerFactory.getLogger(AddressServiceImpl.class);
     private final AddressRepository addressRepository;
     private final ModelMapper modelMapper;
+    private final UserClient userClient;
 
-    public AddressServiceImpl(AddressRepository addressRepository, ModelMapper modelMapper) {
+    public AddressServiceImpl(AddressRepository addressRepository, ModelMapper modelMapper, UserClient userClient) {
         this.addressRepository = addressRepository;
         this.modelMapper = modelMapper;
+        this.userClient = userClient;
     }
 
     @Override
     public List<AddressDto> saveAddress(AddressRequest addressRequest) {
-        //TODO: check if user exists
+        userClient.getSingleUser(addressRequest.getUserId());
         List<Address> listToSave = this.saveOrUpdateAddressRequest(addressRequest);
         List<Address> savedAddress = addressRepository.saveAll(listToSave);
         return savedAddress.stream().map(address -> modelMapper.map(address, AddressDto.class)).toList();
@@ -41,8 +45,7 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     public List<AddressDto> updateAddress(AddressRequest addressRequest) {
-        //TODO: check if user exists
-
+        userClient.getSingleUser(addressRequest.getUserId());
         List<Address> addressByUserId =addressRepository.findAllByUserId(addressRequest.getUserId());
         if(addressByUserId.isEmpty()){
             log.info("No address found for user id {}", addressRequest.getUserId());
@@ -80,6 +83,16 @@ public class AddressServiceImpl implements AddressService {
     public void deleteAddress(Long id) {
         Address address = addressRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Address not found with id:" + id, HttpStatus.NOT_FOUND));
         addressRepository.delete(address);
+
+    }
+
+    @Override
+    public List<AddressDto> getAddressByUserId(Long userId) {
+        List<Address> addressByUserId = addressRepository.findAllByUserId(userId);
+        if(addressByUserId.isEmpty()){
+            throw new ResourceNotFoundException("No address found for user id: " + userId, HttpStatus.NOT_FOUND);
+        }
+        return addressByUserId.stream().map(address -> modelMapper.map(address, AddressDto.class)).toList();
 
     }
 
