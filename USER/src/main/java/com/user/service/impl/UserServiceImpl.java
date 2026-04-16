@@ -1,7 +1,9 @@
 package com.user.service.impl;
 
+import com.user.client.AddressClient;
 import com.user.exception.BadRequestException;
 import com.user.exception.ResourceNotFoundException;
+import com.user.model.dto.AddressDto;
 import com.user.model.dto.UserDto;
 import com.user.model.entity.User;
 import com.user.repository.UserRepository;
@@ -9,8 +11,12 @@ import com.user.service.UserService;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -19,11 +25,14 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
+    private final AddressClient addressClient;
+    private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
 
     public UserServiceImpl(UserRepository userRepository,
-                           ModelMapper modelMapper){
+                           ModelMapper modelMapper, AddressClient addressClient){
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
+        this.addressClient = addressClient;
     }
 
 
@@ -62,7 +71,15 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto getSingleUser(Long id) {
         User user =  userRepository.findById(id).orElseThrow(()-> new ResourceNotFoundException("User not found with id: " + id, HttpStatus.NOT_FOUND));
-        return modelMapper.map(user, UserDto.class);
+        List<AddressDto> addresses = new ArrayList<>();
+        UserDto dto =  modelMapper.map(user, UserDto.class);
+        try{
+            addresses = addressClient.getAddressByUserId(user.getId());
+            dto.setAddress(addresses);
+        }catch(Exception e){
+            log.error("Address not found with employee id: {}", user.getId());
+        }
+        return dto;
     }
 
     @Override
@@ -71,7 +88,19 @@ public class UserServiceImpl implements UserService {
         if(users.isEmpty()){
             throw new ResourceNotFoundException("No users found", HttpStatus.NOT_FOUND);
         }
-        return users.stream().map(user -> modelMapper.map(user, UserDto.class)).toList();
+        List<UserDto> userDtoList =  users.stream().map(user -> modelMapper.map(user, UserDto.class)).toList();
+        List<UserDto> response = new ArrayList<>();
+        for(UserDto user : userDtoList){
+            List<AddressDto> addresses = new ArrayList<>();
+            try{
+                addresses = addressClient.getAddressByUserId(user.getId());
+                user.setAddress(addresses);
+            }catch(Exception e){
+                log.error("Address not found with user id: {}", user.getId());
+            }
+            response.add(user);
+        }
+        return response;
 
     }
 

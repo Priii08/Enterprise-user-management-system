@@ -1,9 +1,4 @@
-package com.user.model.dto;
-
-import com.fasterxml.jackson.annotation.JsonInclude;
-
-import java.util.List;
-@JsonInclude(JsonInclude.Include.NON_NULL)
+package com.address.model.dto;
 
 public class UserDto {
     private Long id;
@@ -11,8 +6,8 @@ public class UserDto {
     private String userEmail;
     private String userCode;
     private String companyName;
-    private List<AddressDto> address;
 
+    public UserDto(){}
 
     public Long getId() {
         return id;
@@ -54,14 +49,6 @@ public class UserDto {
         this.companyName = companyName;
     }
 
-    public List<AddressDto> getAddress() {
-        return address;
-    }
-
-    public void setAddress(List<AddressDto> address) {
-        this.address = address;
-    }
-
     public UserDto(Long id, String userName, String userEmail, String userCode, String companyName) {
         this.id = id;
         this.userName = userName;
@@ -79,8 +66,6 @@ public class UserDto {
                 ", userCode='" + userCode + '\'' +
                 ", companyName='" + companyName + '\'' +
                 '}';
-    }
-    public UserDto() {
     }
 
 
