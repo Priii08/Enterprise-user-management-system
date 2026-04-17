@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/Micro project.iml" filepath="$PROJECT_DIR$/.idea/Micro project.iml" />
+      <module fileurl="file://$PROJECT_DIR$/AUTH-SERVICE/auth-service.iml" filepath="$PROJECT_DIR$/AUTH-SERVICE/auth-service.iml" />
     </modules>
   </component>
 </project>
