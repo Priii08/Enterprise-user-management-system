@@ -1,11 +1,12 @@
 package com.user.model.entity;
 
+import com.commonlib.entity.AuditableEntity;
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "users")
 
-public class User {
+public class User extends AuditableEntity {
 
     @Id  //id becomes primary key
     @GeneratedValue(strategy = GenerationType.IDENTITY)  //auto generates id

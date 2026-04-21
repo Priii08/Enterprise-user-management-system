@@ -1,9 +1,9 @@
 package com.user.config;
 
 
+import com.commonlib.exception.CustomException;
+import com.commonlib.exception.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.user.exception.CustomException;
-import com.user.exception.ErrorResponse;
 import feign.Response;
 import feign.codec.ErrorDecoder;
 
