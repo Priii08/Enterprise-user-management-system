@@ -1,6 +1,7 @@
 package com.user.controller;
 
-import com.user.exception.MissingParameterException;
+
+import com.commonlib.exception.MissingParameterException;
 import com.user.model.dto.UserDto;
 import com.user.service.UserService;
 import org.springframework.http.HttpStatus;

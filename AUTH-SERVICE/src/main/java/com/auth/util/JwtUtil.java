@@ -5,7 +5,10 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Component;
 
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,35 +16,34 @@ import java.util.Map;
 @Component
 public class JwtUtil {
 
-    private final String SECRET_KEY = "ASHHDFHSOIUEUBDIFBUIEWGFVSDVFIWWEE487536DGKFHGHDSGFHKSDGFUEFUEVCUKEUFUDVCVDHSVHSDVHF";
 
-    private Key getKey() {
-        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
-    }
+    public static final String SECRET_KEY = "ASHHDFHSOIUEUBDIFBUIEWGFVSDVFIWWEE487536DGKFHGHDSGFHKSDGFUEFUEVCUKEUFUDVCVDHSVHSDVHF";
 
-    public String generateToken(String username) {
-
+    public String generateToken(String username){
         Map<String, Object> claims = new HashMap<>();
-        claims.put("email", "test@gmail.com");
+        claims.put("email", "satish@gmail.com");
 
         return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(username)   // ✅ use this
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 5))
+                .subject(username)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 5))
+                .claims(claims)
                 .signWith(getKey())
                 .compact();
     }
 
-    private Claims getClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getKey())              // ✅ new syntax
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+    private Key getKey() {
+        byte[] bytes = Base64.getDecoder().decode(SECRET_KEY);
+        return Keys.hmacShaKeyFor(bytes);
     }
 
-    public Date extractExpiration(String token) {
+    private Claims getClaims(String token){
+        return Jwts.parser().verifyWith((SecretKey) getKey())
+                .build().parseSignedClaims(token)
+                .getPayload();
+    }
+
+    public Date extractExpiration(String token){
         return getClaims(token).getExpiration();
     }
 }

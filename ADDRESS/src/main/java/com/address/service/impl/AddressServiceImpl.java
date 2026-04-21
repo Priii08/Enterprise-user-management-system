@@ -5,13 +5,14 @@ import com.address.exception.ResourceNotFoundException;
 import com.address.model.dto.AddressDto;
 import com.address.model.dto.AddressRequest;
 import com.address.model.dto.AddressRequestDto;
-import com.address.model.dto.UserDto;
+
 import com.address.model.entity.Address;
 import com.address.repository.AddressRepository;
 import com.address.service.AddressService;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -19,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import static org.springframework.data.jpa.domain.AbstractPersistable_.id;
+
 
 @Service
 public class AddressServiceImpl implements AddressService {
@@ -27,6 +28,12 @@ public class AddressServiceImpl implements AddressService {
     private final AddressRepository addressRepository;
     private final ModelMapper modelMapper;
     private final UserClient userClient;
+
+    @Value("${greeting}")
+    private String greeting;
+
+    @Value("${common.greeting}")
+    private String commonGreeting;
 
     public AddressServiceImpl(AddressRepository addressRepository, ModelMapper modelMapper, UserClient userClient) {
         this.addressRepository = addressRepository;
@@ -72,6 +79,11 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     public List<AddressDto> getAllAddresses() {
+//        try {
+//            Thread.sleep(6000);
+//        } catch (InterruptedException e) {
+//            throw new RuntimeException(e);
+//        }
         List<Address> all = addressRepository.findAll();
         if(all.isEmpty()){
             throw new ResourceNotFoundException("No address found", HttpStatus.NOT_FOUND);
@@ -88,6 +100,8 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     public List<AddressDto> getAddressByUserId(Long userId) {
+        System.out.println("Greeting: "+ greeting);
+        System.out.println("Common Greeting: "+ commonGreeting);
         List<Address> addressByUserId = addressRepository.findAllByUserId(userId);
         if(addressByUserId.isEmpty()){
             throw new ResourceNotFoundException("No address found for user id: " + userId, HttpStatus.NOT_FOUND);
